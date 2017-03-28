@@ -1,0 +1,18 @@
+[package]
+name = "dazzle"
+version = "0.0.1"
+authors = ["Dario Ostuni <dario.ostuni@gmail.com>"]
+
+[[bin]]
+name = "dazzled"
+path = "src/dazzled.rs"
+
+[dependencies]
+tungstenite = "0.1.1"
+mowl = "1.0.3"
+log = "0.3.7"
+serde_json = "0.9.9"
+serde = "0.9.9"
+serde_derive = "0.9.9"
+twox-hash = "1.0.1"
+rand = "0.3.15"
