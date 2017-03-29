@@ -12,8 +12,16 @@ use std::net::{TcpListener, TcpStream};
 use std::sync::mpsc::{Receiver, Sender, channel};
 use std::thread;
 use std::thread::JoinHandle;
+use std::time::Duration;
 use tungstenite::{Error, Message, WebSocket, accept};
 use tungstenite::protocol::Role;
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ServerConfig
+{
+    turn_time_ms: u64,
+    server_port: u16,
+}
 
 enum ConnectionType
 {
@@ -43,6 +51,7 @@ pub struct Server
     incoming_messages: Receiver<MessageResponse>,
     message_sender: Sender<MessageResponse>,
     seed: u64,
+    turn_time: u64,
 }
 
 impl Connection
@@ -73,11 +82,12 @@ impl Connection
 
 impl Server
 {
-    pub fn new() -> Server
+    pub fn new(config: ServerConfig) -> Server
     {
         let (sen, rec) = channel();
+        let server_port = config.server_port;
         thread::spawn(move || {
-            let listener = TcpListener::bind("0.0.0.0:42000").unwrap();
+            let listener = TcpListener::bind(("0.0.0.0", server_port)).unwrap();
             for stream in listener.incoming()
             {
                 match stream
@@ -101,6 +111,7 @@ impl Server
             incoming_messages: rec_msg,
             message_sender: sen_msg,
             seed: 0,
+            turn_time: config.turn_time_ms,
         }
     }
 
@@ -110,6 +121,18 @@ impl Server
         {
             self.connections.insert(self.seed, Connection::new(x, self.message_sender.clone(), self.seed));
             self.seed += 1;
+        }
+        thread::sleep(Duration::from_millis(self.turn_time));
+    }
+}
+
+impl ServerConfig
+{
+    pub fn new() -> ServerConfig
+    {
+        ServerConfig {
+            turn_time_ms: 1000,
+            server_port: 42000,
         }
     }
 }

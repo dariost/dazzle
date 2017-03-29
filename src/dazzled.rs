@@ -20,13 +20,42 @@ mod chasher;
 mod common;
 mod server;
 
+
 use server::Server;
+use server::ServerConfig;
+use std::fs::File;
+
+fn try_open_config() -> Option<File>
+{
+    let file_list = ["dazzle.json", "/etc/dazzle.json"];
+    for file_name in &file_list
+    {
+        let f = File::open(file_name);
+        if f.is_ok()
+        {
+            return f.ok();
+        }
+    }
+    None
+}
 
 fn main()
 {
     mowl::init_with_level(log::LogLevel::Info).unwrap();
     info!("Starting dazzled...");
-    let mut server = Server::new();
+    let config = match try_open_config()
+    {
+        Some(f) =>
+        {
+            match serde_json::from_reader(f)
+            {
+                Ok(x) => x,
+                Err(why) => panic!("Invalid JSON file: {}", why),
+            }
+        }
+        None => ServerConfig::new(),
+    };
+    let mut server = Server::new(config);
     loop
     {
         server.main();
