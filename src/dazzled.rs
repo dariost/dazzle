@@ -20,7 +20,6 @@ mod chasher;
 mod common;
 mod server;
 
-
 use server::Server;
 use server::ServerConfig;
 use std::fs::File;

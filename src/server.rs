@@ -7,6 +7,8 @@
  *
  */
 
+use common::*;
+use serde_json;
 use std::collections::HashMap;
 use std::net::{TcpListener, TcpStream};
 use std::sync::mpsc::{Receiver, Sender, channel};
@@ -40,7 +42,7 @@ struct Connection
 
 enum MessageResponse
 {
-    Mail(Message),
+    Mail(u64, Message),
     Disconnected(u64),
 }
 
@@ -68,7 +70,7 @@ impl Connection
                 {
                     match ws.read_message()
                     {
-                        Ok(x) => sender.send(MessageResponse::Mail(x)).unwrap(),
+                        Ok(x) => sender.send(MessageResponse::Mail(seed, x)).unwrap(),
                         Err(Error::ConnectionClosed) => {
                             sender.send(MessageResponse::Disconnected(seed)).unwrap();
                             break;
@@ -128,9 +130,38 @@ impl Server
             {
                 self.connections.remove(&id);
             }
-            else if let MessageResponse::Mail(_) = x
+            else if let MessageResponse::Mail(id, msg) = x
             {
-                unimplemented!();
+                let msg = match msg.into_text()
+                {
+                    Ok(s) => s,
+                    Err(why) =>
+                    {
+                        error!("Received garbage: {}", why);
+                        continue;
+                    }
+                };
+                let msg: ClientMessage = match serde_json::from_str(msg.as_str())
+                {
+                    Ok(s) => s,
+                    Err(why) =>
+                    {
+                        error!("Received garbage: {}", why);
+                        continue;
+                    }
+                };
+                if let ClientMessage::HandShake(role) = msg
+                {
+                    self.handle_accept(id, role);
+                }
+                else if let ClientMessage::Command(command) = msg
+                {
+                    self.handle_command(id, command);
+                }
+                else
+                {
+                    unreachable!();
+                }
             }
             else
             {
@@ -138,6 +169,16 @@ impl Server
             }
         }
         thread::sleep(Duration::from_millis(self.turn_time));
+    }
+
+    fn handle_accept(&mut self, id: u64, role: ClientRole)
+    {
+        unimplemented!();
+    }
+
+    fn handle_command(&mut self, id: u64, command: ClientCommand)
+    {
+        unimplemented!();
     }
 }
 
