@@ -13,6 +13,7 @@ use std::sync::mpsc::{Receiver, Sender, channel};
 use std::thread;
 use std::thread::JoinHandle;
 use tungstenite::{Error, Message, WebSocket, accept};
+use tungstenite::protocol::Role;
 
 enum ConnectionType
 {
@@ -51,10 +52,7 @@ impl Connection
     {
         let mut ws = ws;
         Connection {
-            socket: match accept(ws.get_ref().try_clone().unwrap()) {
-                Ok(x) => x,
-                Err(_) => unreachable!(),
-            },
+            socket: WebSocket::from_raw_socket(ws.get_ref().try_clone().unwrap(), Role::Server),
             role: ConnectionType::Unknown,
             handle: thread::spawn(move ||
                 loop
