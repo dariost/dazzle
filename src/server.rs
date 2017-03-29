@@ -8,8 +8,10 @@
  */
 
 use common::*;
+use serde::ser::Serialize;
 use serde_json;
 use std::collections::HashMap;
+use std::io::ErrorKind;
 use std::net::{TcpListener, TcpStream};
 use std::sync::mpsc::{Receiver, Sender, channel};
 use std::thread;
@@ -54,6 +56,7 @@ pub struct Server
     message_sender: Sender<MessageResponse>,
     seed: u64,
     turn_time: u64,
+    game_id: u64,
 }
 
 impl Connection
@@ -114,6 +117,7 @@ impl Server
             message_sender: sen_msg,
             seed: 0,
             turn_time: config.turn_time_ms,
+            game_id: 0,
         }
     }
 
@@ -173,12 +177,69 @@ impl Server
 
     fn handle_accept(&mut self, id: u64, role: ClientRole)
     {
-        unimplemented!();
+        match role
+        {
+            ClientRole::Viewer =>
+            {
+                {
+                    let v = self.connections.get_mut(&id);
+                    if v.is_none()
+                    {
+                        return;
+                    }
+                    let v = v.unwrap();
+                    v.role = ConnectionType::Viewer;
+                }
+                self.send_data(id, &ServerResponse::Ok);
+            }
+            ClientRole::Player(info) => unimplemented!(),
+        };
     }
 
     fn handle_command(&mut self, id: u64, command: ClientCommand)
     {
         unimplemented!();
+    }
+
+    fn send_data<T: ?Sized + Serialize>(&mut self, id: u64, value: &T)
+    {
+        match serde_json::to_string(value)
+        {
+            Ok(s) =>
+            {
+                match self.connections.get_mut(&id)
+                {
+                    Some(conn) =>
+                    {
+                        match conn.socket.write_message(Message::text(s))
+                        {
+                            Ok(_) =>
+                            {}
+                            Err(Error::Io(x)) =>
+                            {
+                                match x.kind()
+                                {
+                                    ErrorKind::WouldBlock =>
+                                    {
+                                        match conn.socket.write_pending()
+                                        {
+                                            Ok(_) =>
+                                            {}
+                                            Err(why) => error!("Unable to flush WebSocket {}", why),
+                                        }
+                                    }
+                                    _ => error!("I/O error"),
+                                }
+                            }
+                            Err(Error::ConnectionClosed) => self.message_sender.send(MessageResponse::Disconnected(id)).unwrap(),
+                            Err(_) => error!("Error while sending data"),
+                        }
+                    }
+                    None => error!("Missing id"),
+                }
+            }
+            Err(_) => unreachable!(),
+        };
     }
 }
 

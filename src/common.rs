@@ -31,6 +31,7 @@ pub struct Overview
     pub turns_left: u64,
     pub ms_for_turn: u64,
     pub tokens: Vec<Point>,
+    pub game_id: u64,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
