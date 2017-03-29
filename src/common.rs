@@ -8,27 +8,70 @@
  */
 
 #[derive(Serialize, Deserialize, Debug)]
-struct Point
+pub struct Point
 {
-    x: u32,
-    y: u32,
+    pub x: u32,
+    pub y: u32,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct Player
+pub struct Player
 {
-    name: String,
-    points: u64,
-    position: Point,
-    id: u64,
+    pub name: String,
+    pub points: u64,
+    pub position: Point,
+    pub id: u64,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct Overview
+pub struct Overview
 {
-    players: Vec<Player>,
-    grid: Vec<Vec<Option<u64>>>,
-    turns_left: u64,
-    ms_for_turn: u64,
-    tokens: Vec<Point>,
+    pub players: Vec<Player>,
+    pub grid: Vec<Vec<Option<u64>>>,
+    pub turns_left: u64,
+    pub ms_for_turn: u64,
+    pub tokens: Vec<Point>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct PlayerInfo
+{
+    pub name: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum ClientRole
+{
+    Viewer,
+    Player(PlayerInfo),
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum Direction
+{
+    Up,
+    Down,
+    Left,
+    Right,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum ClientCommand
+{
+    Move(Direction),
+    Nothing,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum ServerResponse
+{
+    Ok,
+    Error(String),
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum ClientMessage
+{
+    HandShake(ClientRole),
+    Command(ClientCommand),
 }

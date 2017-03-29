@@ -56,6 +56,7 @@ fn main()
         None => ServerConfig::new(),
     };
     let mut server = Server::new(config);
+    info!("dazzled started successfully!");
     loop
     {
         server.main();

@@ -7,6 +7,7 @@
  *
  */
 
+use common::PlayerInfo;
 use std::default::Default;
 use std::hash::Hasher;
 use twox_hash::XxHash;
@@ -40,4 +41,11 @@ impl CHasher
     {
         self.internal.finish()
     }
+}
+
+pub fn player_hash(player_info: &PlayerInfo) -> u64
+{
+    let mut hasher = CHasher::new();
+    hasher.update(player_info.name.as_str().as_bytes());
+    hasher.finalize()
 }

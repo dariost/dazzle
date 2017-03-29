@@ -26,7 +26,7 @@ pub struct ServerConfig
 enum ConnectionType
 {
     Viewer,
-    InGame,
+    InGame(u64),
     InQueue,
     Unknown,
 }
@@ -121,6 +121,21 @@ impl Server
         {
             self.connections.insert(self.seed, Connection::new(x, self.message_sender.clone(), self.seed));
             self.seed += 1;
+        }
+        while let Ok(x) = self.incoming_messages.try_recv()
+        {
+            if let MessageResponse::Disconnected(id) = x
+            {
+                self.connections.remove(&id);
+            }
+            else if let MessageResponse::Mail(_) = x
+            {
+                unimplemented!();
+            }
+            else
+            {
+                unreachable!();
+            }
         }
         thread::sleep(Duration::from_millis(self.turn_time));
     }
