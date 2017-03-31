@@ -247,7 +247,8 @@ impl ServerConfig
 {
     pub fn new() -> ServerConfig
     {
-        ServerConfig {
+        ServerConfig 
+        {
             turn_time_ms: 1000,
             server_port: 42000,
         }
