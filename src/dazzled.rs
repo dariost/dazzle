@@ -16,6 +16,7 @@ extern crate serde_json;
 extern crate twox_hash;
 extern crate tungstenite;
 extern crate serde;
+extern crate rand;
 
 mod chasher;
 mod common;
