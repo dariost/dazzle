@@ -7,6 +7,7 @@
  *
  */
 
+use chasher::player_hash;
 use common::*;
 use serde::ser::Serialize;
 use serde_json;
@@ -23,15 +24,16 @@ use tungstenite::protocol::Role;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ServerConfig
 {
-    turn_time_ms: u64,
+    tick_time_ms: u64,
     server_port: u16,
+    game_start_ticks: u64,
 }
 
 enum ConnectionType
 {
     Viewer,
     InGame(u64),
-    InQueue,
+    InQueue(u64),
     Unknown,
 }
 
@@ -54,9 +56,13 @@ pub struct Server
     incoming_connections: Receiver<WebSocket<TcpStream>>,
     incoming_messages: Receiver<MessageResponse>,
     message_sender: Sender<MessageResponse>,
+    players: HashMap<u64, Player>,
+    queue: HashMap<u64, Player>,
     seed: u64,
-    turn_time: u64,
+    tick_time: u64,
     game_id: u64,
+    in_game: bool,
+    game_start_ticks: u64,
 }
 
 impl Connection
@@ -116,8 +122,12 @@ impl Server
             incoming_messages: rec_msg,
             message_sender: sen_msg,
             seed: 0,
-            turn_time: config.turn_time_ms,
+            tick_time: config.tick_time_ms,
             game_id: 0,
+            in_game: false,
+            players: Default::default(),
+            queue: Default::default(),
+            game_start_ticks: config.game_start_ticks,
         }
     }
 
@@ -172,9 +182,10 @@ impl Server
                 unreachable!();
             }
         }
-        thread::sleep(Duration::from_millis(self.turn_time));
+        thread::sleep(Duration::from_millis(self.tick_time));
     }
 
+    #[cfg_attr(feature = "cargo-clippy", allow(map_entry))]
     fn handle_accept(&mut self, id: u64, role: ClientRole)
     {
         match role
@@ -192,7 +203,35 @@ impl Server
                 }
                 self.send_data(id, &ServerResponse::Ok);
             }
-            ClientRole::Player(info) => unimplemented!(),
+            ClientRole::Player(info) =>
+            {
+                let user_game_id = player_hash(&info);
+                if self.queue.contains_key(&user_game_id)
+                {
+                    self.send_data(id, &ServerResponse::Error(String::from("Username already taken")));
+                }
+                else
+                {
+                    {
+                        let conn = self.connections.get_mut(&id);
+                        if conn.is_none()
+                        {
+                            error!("Trying to register a non-existent WebSocket as player!");
+                            return;
+                        }
+                        let conn = conn.unwrap();
+                        conn.role = ConnectionType::InQueue(user_game_id);
+                        self.queue.insert(user_game_id,
+                                          Player {
+                                              name: info.name,
+                                              id: user_game_id,
+                                              points: 0,
+                                              position: Point { x: 0, y: 0 },
+                                          });
+                    }
+                    self.send_data(id, &ServerResponse::Ok);
+                }
+            }
         };
     }
 
@@ -248,8 +287,9 @@ impl ServerConfig
     pub fn new() -> ServerConfig
     {
         ServerConfig {
-            turn_time_ms: 1000,
+            tick_time_ms: 1000,
             server_port: 42000,
+            game_start_ticks: 30,
         }
     }
 }
