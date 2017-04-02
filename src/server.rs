@@ -167,20 +167,20 @@ impl Server
             };
             for v in game.players.keys()
             {
-                gaming_ids.insert(v.clone());
+                gaming_ids.insert(*v);
             }
         }
         let mut conn_info: HashSet<(u64, ConnectionType)> = Default::default();
-        for (id, conn) in self.connections.iter()
+        for (id, conn) in &self.connections
         {
-            conn_info.insert((id.clone(), conn.role.clone()));
+            conn_info.insert((*id, conn.role.clone()));
         }
         for (id, role) in conn_info.drain()
         {
             match role
             {
-                ConnectionType::Viewer => self.send_data(id.clone(), &overview),
-                ConnectionType::Player(user_game_id) if gaming_ids.contains(&user_game_id) => self.send_data(id.clone(), &overview),
+                ConnectionType::Viewer => self.send_data(id, &overview),
+                ConnectionType::Player(user_game_id) if gaming_ids.contains(&user_game_id) => self.send_data(id, &overview),
                 _ => continue,
             }
         }
@@ -284,13 +284,12 @@ impl Server
                       .finished()
         {
             let mut to_readd: Vec<(u64, ClientRole)> = Vec::new();
-            for (key, player) in self.game
-                    .as_ref()
-                    .unwrap()
-                    .players
-                    .iter()
+            for (key, player) in &self.game
+                                      .as_ref()
+                                      .unwrap()
+                                      .players
             {
-                to_readd.push((key.clone(), ClientRole::Player(PlayerInfo { name: player.name.clone() })));
+                to_readd.push((*key, ClientRole::Player(PlayerInfo { name: player.name.clone() })));
             }
             self.game = None;
             self.game_start_ticks_left = self.game_start_ticks;
@@ -374,10 +373,7 @@ impl Server
             self.send_data(id, &ServerResponse::Error(String::from("No active game")));
             return;
         }
-        match self.connections
-                  .get(&id)
-                  .unwrap()
-                  .role
+        match self.connections[&id].role
         {
             ConnectionType::Player(user_game_id) =>
             {
