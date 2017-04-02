@@ -21,6 +21,7 @@ extern crate rand;
 mod chasher;
 mod common;
 mod server;
+mod game;
 
 use server::Server;
 use server::ServerConfig;
