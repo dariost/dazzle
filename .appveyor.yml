@@ -7,15 +7,11 @@ environment:
           target: x86_64-pc-windows-msvc
         - channel: nightly
           target: x86_64-pc-windows-msvc
-        - channel: 1.15.0
-          target: x86_64-pc-windows-msvc
         - channel: stable
           target: x86_64-pc-windows-gnu
         - channel: beta
           target: x86_64-pc-windows-gnu
         - channel: nightly
-          target: x86_64-pc-windows-gnu
-        - channel: 1.15.0
           target: x86_64-pc-windows-gnu
 matrix:
     allow_failures:
