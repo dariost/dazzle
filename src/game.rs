@@ -204,7 +204,7 @@ impl Game
             {
                 match direction
                 {
-                    Direction::Up if player.position.y + 1 < rows &&
+                    Direction::Down if player.position.y + 1 < rows &&
                                      !positions.contains(&Point {
                                                               x: player.position.x,
                                                               y: player.position.y + 1,
@@ -213,7 +213,7 @@ impl Game
                         player.position.y += 1;
                         Ok(())
                     }
-                    Direction::Down if (player.position.y as i64) - 1 >= 0 &&
+                    Direction::Up if (player.position.y as i64) - 1 >= 0 &&
                                        !positions.contains(&Point {
                                                                 x: player.position.x,
                                                                 y: player.position.y - 1,
