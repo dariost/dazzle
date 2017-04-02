@@ -31,6 +31,7 @@ pub struct ServerConfig
     game_turns: u64,
 }
 
+#[derive(PartialEq, Eq, Hash, Clone)]
 enum ConnectionType
 {
     Viewer,
@@ -379,7 +380,46 @@ impl Server
 
     pub fn send_overview(&mut self)
     {
-        unimplemented!();
+        if self.game.is_none()
+        {
+            error!("Trying to generate overview while there is no game");
+            return;
+        }
+        let overview: Overview;
+        let mut gaming_ids: HashSet<u64> = Default::default();
+        {
+            let game = self.game.as_ref().unwrap();
+            let mut tokens = game.tokens.clone();
+            let mut players = game.players.clone();
+            let tokens = tokens.drain().collect();
+            let players = players.drain().map(|(_, x)| x).collect();
+            overview = Overview {
+                game_id: game.game_id,
+                turns_left: game.turns_left,
+                ms_for_turn: self.tick_time,
+                grid: game.grid.clone(),
+                tokens: tokens,
+                players: players,
+            };
+            for v in game.players.keys()
+            {
+                gaming_ids.insert(v.clone());
+            }
+        }
+        let mut conn_info: HashSet<(u64, ConnectionType)> = Default::default();
+        for (id, conn) in self.connections.iter()
+        {
+            conn_info.insert((id.clone(), conn.role.clone()));
+        }
+        for (id, role) in conn_info.drain()
+        {
+            match role
+            {
+                ConnectionType::Viewer => self.send_data(id.clone(), &overview),
+                ConnectionType::Player(user_game_id) if gaming_ids.contains(&user_game_id) => self.send_data(id.clone(), &overview),
+                _ => continue,
+            }
+        }
     }
 
     pub fn main(&mut self)

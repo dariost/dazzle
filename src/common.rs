@@ -14,7 +14,7 @@ pub struct Point
     pub y: usize,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Player
 {
     pub name: String,
