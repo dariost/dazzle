@@ -39,7 +39,7 @@ impl CHasher
 
     pub fn finalize(self) -> u64
     {
-        self.internal.finish()
+        self.internal.finish() >> 32
     }
 }
 

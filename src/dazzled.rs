@@ -25,11 +25,16 @@ mod game;
 
 use server::Server;
 use server::ServerConfig;
+use std::env;
 use std::fs::File;
 
-fn try_open_config() -> Option<File>
+fn try_open_config(custom: Option<String>) -> Option<File>
 {
-    let file_list = ["dazzle.json", "/etc/dazzle.json"];
+    let mut file_list = vec![String::from("dazzled.json"), String::from("/etc/dazzled.json")];
+    if let Some(p) = custom
+    {
+        file_list.insert(0, p);
+    }
     for file_name in &file_list
     {
         let f = File::open(file_name);
@@ -45,7 +50,13 @@ fn main()
 {
     mowl::init_with_level(log::LogLevel::Info).unwrap();
     info!("Starting dazzled...");
-    let config = match try_open_config()
+    let args: Vec<String> = env::args().collect();
+    let custom_path = match args.len()
+    {
+        0...1 => None,
+        _ => Some(args[2].clone()),
+    };
+    let config = match try_open_config(custom_path)
     {
         Some(f) =>
         {

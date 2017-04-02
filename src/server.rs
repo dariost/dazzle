@@ -89,12 +89,11 @@ impl Connection
             match ws.read_message()
             {
                 Ok(x) => sender.send(MessageResponse::Mail(seed, x)).unwrap(),
-                Err(Error::ConnectionClosed) =>
+                Err(_) =>
                 {
                     sender.send(MessageResponse::Disconnected(seed)).unwrap();
                     break;
                 }
-                Err(_) => continue,
             }
         });
         conn
@@ -191,6 +190,7 @@ impl Server
         while let Ok(x) = self.incoming_connections.try_recv()
         {
             self.connections.insert(self.seed, Connection::new(x, self.message_sender.clone(), self.seed));
+            info!("Accepted connection #{}", self.seed);
             self.seed += 1;
         }
         while let Ok(x) = self.incoming_messages.try_recv()
@@ -207,6 +207,7 @@ impl Server
                         .remove(&id);
                 }
                 self.connections.remove(&id);
+                info!("Closed connection #{}", id);
             }
             else if let MessageResponse::Mail(id, msg) = x
             {
@@ -248,10 +249,12 @@ impl Server
         }
         if self.game.is_none() && self.game_start_ticks_left > 0 && self.queue.len() >= 2
         {
+            info!("Game staring in {} ticks", self.game_start_ticks_left);
             self.game_start_ticks_left -= 1;
         }
         else if self.game.is_none() && self.game_start_ticks_left == 0 && self.queue.len() >= 2
         {
+            info!("Game started with {} players", self.queue.len());
             let mut players: HashMap<u64, Player> = Default::default();
             for (player_id, player_value) in self.queue.drain()
             {
@@ -283,6 +286,7 @@ impl Server
                       .unwrap()
                       .finished()
         {
+            info!("Game ended!");
             let mut to_readd: Vec<(u64, ClientRole)> = Vec::new();
             for (key, player) in &self.game
                                       .as_ref()
@@ -320,6 +324,7 @@ impl Server
                 if !not_interactive
                 {
                     self.send_data(id, &ServerResponse::Ok);
+                    info!("Viewer connected");
                 }
             }
             ClientRole::Player(info) =>
@@ -334,6 +339,7 @@ impl Server
                 }
                 else
                 {
+                    let info_name = String::from(info.name.trim());
                     {
                         let conn = self.connections.get_mut(&id);
                         if conn.is_none()
@@ -345,7 +351,7 @@ impl Server
                         conn.role = ConnectionType::Player(user_game_id);
                         self.queue.insert(user_game_id,
                                           Player {
-                                              name: info.name,
+                                              name: info_name.clone(),
                                               id: user_game_id,
                                               points: 0,
                                               position: Point { x: 0, y: 0 },
@@ -355,7 +361,11 @@ impl Server
                             self.game_start_ticks_left = self.game_start_ticks;
                         }
                     }
-                    self.send_data(id, &ServerResponse::Ok);
+                    if !not_interactive
+                    {
+                        info!("Player connected: {}", info_name);
+                        self.send_data(id, &ServerResponse::Ok);
+                    }
                 }
             }
         };

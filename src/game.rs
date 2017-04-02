@@ -31,8 +31,8 @@ impl Game
     {
         let mut players = players;
         let num_players = players.len();
-        let rows = 6 + (num_players as f64).sqrt().round() as usize;
-        let cols = rows * 2;
+        let rows = 8 + num_players / 2;
+        let cols = rows * 2 + 1;
         let grid: Vec<Vec<Option<u64>>> = vec![vec![None; cols]; rows];
         let mut rng = StdRng::new().unwrap();
         let gen_row = Range::new(0, rows);
@@ -159,7 +159,12 @@ impl Game
         }
         self.turns_left -= 1;
         let mut count = 0;
-        while self.rng.next_f64() < 0.1
+        let mut cap = 0.025 * (self.players.len() as f64).log2();
+        if cap > 0.5
+        {
+            cap = 0.5;
+        }
+        while self.rng.next_f64() < cap
         {
             count += 1;
         }
