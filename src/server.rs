@@ -393,6 +393,15 @@ impl Server
         {
             if let MessageResponse::Disconnected(id) = x
             {
+                self.queue.remove(&id);
+                if self.game.is_some()
+                {
+                    self.game
+                        .as_mut()
+                        .unwrap()
+                        .players
+                        .remove(&id);
+                }
                 self.connections.remove(&id);
             }
             else if let MessageResponse::Mail(id, msg) = x
