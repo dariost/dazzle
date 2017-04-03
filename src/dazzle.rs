@@ -174,12 +174,13 @@ E: turns left
 M: milliseconds to make the move
 positionals arguments
 ID: player id
+S: player name (string)
 P: points
 X, Y: position
 
 INPUT:
 N R C T E M
-N lines containing: ID P X Y
+N lines containing: ID S P X Y
 R lines, each containing C numbers: -1 for nothing, the player id otherwise
 T lines: X Y
 */
