@@ -329,8 +329,10 @@ impl Server
             }
             ClientRole::Player(info) =>
             {
+                let mut info = info;
+                info.name = String::from(info.name.trim());
                 let user_game_id = player_hash(&info);
-                if self.queue.contains_key(&user_game_id)
+                if self.queue.contains_key(&user_game_id) || "\n\r\t ".chars().any(|x| info.name.contains(x))
                 {
                     if !not_interactive
                     {
@@ -339,7 +341,6 @@ impl Server
                 }
                 else
                 {
-                    let info_name = String::from(info.name.trim());
                     {
                         let conn = self.connections.get_mut(&id);
                         if conn.is_none()
@@ -351,7 +352,7 @@ impl Server
                         conn.role = ConnectionType::Player(user_game_id);
                         self.queue.insert(user_game_id,
                                           Player {
-                                              name: info_name.clone(),
+                                              name: info.name.clone(),
                                               id: user_game_id,
                                               points: 0,
                                               position: Point { x: 0, y: 0 },
@@ -363,7 +364,7 @@ impl Server
                     }
                     if !not_interactive
                     {
-                        info!("Player connected: {}", info_name);
+                        info!("Player connected: {}", info.name);
                         self.send_data(id, &ServerResponse::Ok);
                     }
                 }
