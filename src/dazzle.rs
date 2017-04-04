@@ -125,15 +125,19 @@ fn main()
         }
         for rows in &overview.grid
         {
-            for cell in rows
+            for pos in 0..rows.len()
             {
-                if let Some(value) = *cell
+                if let Some(value) = rows[pos]
                 {
-                    write!(&mut stdin, "{} ", value).unwrap();
+                    write!(&mut stdin, "{}", value).unwrap();
                 }
                 else
                 {
-                    write!(&mut stdin, "{} ", -1).unwrap();
+                    write!(&mut stdin, "{}", -1).unwrap();
+                }
+                if pos != rows.len() - 1
+                {
+                    write!(&mut stdin, " ").unwrap();
                 }
             }
             writeln!(&mut stdin, "").unwrap();
