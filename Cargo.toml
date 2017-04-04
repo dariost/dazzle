@@ -12,7 +12,7 @@ name = "dazzle"
 path = "src/dazzle.rs"
 
 [dependencies]
-tungstenite = "0.1.1"
+tungstenite = { version = "0.1.1", default-features = false }
 mowl = "1.0.3"
 log = "0.3.7"
 serde_json = "0.9.9"
