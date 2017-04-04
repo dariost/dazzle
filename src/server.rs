@@ -28,6 +28,7 @@ pub struct ServerConfig
     server_port: u16,
     game_start_ticks: u64,
     game_turns: u64,
+    token_rate: f64,
 }
 
 #[derive(PartialEq, Eq, Hash, Clone)]
@@ -64,6 +65,7 @@ pub struct Server
     game_turns: u64,
     game_start_ticks_left: u64,
     game: Option<Game>,
+    token_rate: f64,
 }
 
 impl Drop for Connection
@@ -138,6 +140,7 @@ impl Server
             game_turns: config.game_turns,
             game_start_ticks_left: config.game_turns,
             game: None,
+            token_rate: config.token_rate,
         }
     }
 
@@ -260,7 +263,7 @@ impl Server
             {
                 players.insert(player_id, player_value);
             }
-            self.game = Some(Game::new(players, self.game_turns, self.game_id));
+            self.game = Some(Game::new(players, self.game_turns, self.game_id, self.token_rate));
             self.game
                 .as_mut()
                 .unwrap()
@@ -455,6 +458,7 @@ impl ServerConfig
             server_port: 42000,
             game_start_ticks: 60,
             game_turns: 300,
+            token_rate: 2.5,
         }
     }
 }

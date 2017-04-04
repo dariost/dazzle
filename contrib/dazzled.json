@@ -2,5 +2,6 @@
     "tick_time_ms": 500,
     "server_port": 42000,
     "game_start_ticks": 60,
-    "game_turns": 300
+    "game_turns": 300,
+    "token_rate": 2.5
 }

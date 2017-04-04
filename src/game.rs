@@ -23,11 +23,12 @@ pub struct Game
     pub game_id: u64,
     pub players: HashMap<u64, Player>,
     pub moved: HashMap<u64, bool>,
+    pub token_rate: f64,
 }
 
 impl Game
 {
-    pub fn new(players: HashMap<u64, Player>, total_turns: u64, game_id: u64) -> Game
+    pub fn new(players: HashMap<u64, Player>, total_turns: u64, game_id: u64, token_rate: f64) -> Game
     {
         let mut players = players;
         let num_players = players.len();
@@ -56,6 +57,7 @@ impl Game
             game_id: game_id,
             players: players,
             moved: moved,
+            token_rate: token_rate,
         }
     }
 
@@ -159,7 +161,7 @@ impl Game
         }
         self.turns_left -= 1;
         let mut count = 0;
-        let mut cap = 0.025 * (self.players.len() as f64).log2();
+        let mut cap = 0.01 * self.token_rate * (self.players.len() as f64).log2();
         if cap > 0.5
         {
             cap = 0.5;
@@ -205,19 +207,19 @@ impl Game
                 match direction
                 {
                     Direction::Down if player.position.y + 1 < rows &&
-                                     !positions.contains(&Point {
-                                                              x: player.position.x,
-                                                              y: player.position.y + 1,
-                                                          }) =>
+                                       !positions.contains(&Point {
+                                                                x: player.position.x,
+                                                                y: player.position.y + 1,
+                                                            }) =>
                     {
                         player.position.y += 1;
                         Ok(())
                     }
                     Direction::Up if (player.position.y as i64) - 1 >= 0 &&
-                                       !positions.contains(&Point {
-                                                                x: player.position.x,
-                                                                y: player.position.y - 1,
-                                                            }) =>
+                                     !positions.contains(&Point {
+                                                              x: player.position.x,
+                                                              y: player.position.y - 1,
+                                                          }) =>
                     {
                         player.position.y -= 1;
                         Ok(())
