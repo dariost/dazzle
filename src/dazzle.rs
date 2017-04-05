@@ -57,8 +57,7 @@ fn send_data<T: ?Sized + Serialize, U: Read + Write>(ws: &mut WebSocket<U>, valu
                         _ => error!("I/O error"),
                     }
                 }
-                Err(Error::ConnectionClosed) => panic!("Connection closed!"),
-                Err(_) => error!("Error while sending data"),
+                Err(_) => panic!("Connection closed!"),
             }
         }
         Err(_) => unreachable!(),
@@ -96,22 +95,14 @@ fn main()
     stdout.read_line(&mut name_string).unwrap();
     let connect_message = ClientMessage::HandShake(ClientRole::Player(PlayerInfo { name: name_string }));
     send_data(&mut websocket, &connect_message);
-    let response: ServerResponse = serde_json::from_str(websocket.read_message()
-                                                            .unwrap()
-                                                            .to_text()
-                                                            .unwrap())
-            .unwrap();
+    let response: ServerResponse = serde_json::from_str(websocket.read_message().unwrap().to_text().unwrap()).unwrap();
     if let ServerResponse::Error(s) = response
     {
         panic!("Error from server: {}", s);
     }
     loop
     {
-        let overview: Overview = serde_json::from_str(websocket.read_message()
-                                                          .unwrap()
-                                                          .to_text()
-                                                          .unwrap())
-                .unwrap();
+        let overview: Overview = serde_json::from_str(websocket.read_message().unwrap().to_text().unwrap()).unwrap();
         let n = overview.players.len();
         let r = overview.grid.len();
         let c = overview.grid[0].len();
@@ -161,13 +152,9 @@ fn main()
         };
         let command = ClientMessage::Command(command);
         send_data(&mut websocket, &command);
-        let _: ServerResponse = serde_json::from_str(websocket.read_message()
-                                                         .unwrap()
-                                                         .to_text()
-                                                         .unwrap())
-                .unwrap();
+        let _: ServerResponse = serde_json::from_str(websocket.read_message().unwrap().to_text().unwrap()).unwrap();
     }
-    websocket.close().unwrap();
+    websocket.close(None).unwrap();
 }
 
 /* INPUT FORMAT

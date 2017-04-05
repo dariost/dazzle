@@ -72,7 +72,7 @@ impl Drop for Connection
 {
     fn drop(&mut self)
     {
-        let _ = self.socket.close();
+        let _ = self.socket.close(None);
     }
 }
 
@@ -192,7 +192,8 @@ impl Server
     {
         while let Ok(x) = self.incoming_connections.try_recv()
         {
-            self.connections.insert(self.seed, Connection::new(x, self.message_sender.clone(), self.seed));
+            self.connections
+                .insert(self.seed, Connection::new(x, self.message_sender.clone(), self.seed));
             info!("Accepted connection #{}", self.seed);
             self.seed += 1;
         }
@@ -203,11 +204,7 @@ impl Server
                 self.queue.remove(&id);
                 if self.game.is_some()
                 {
-                    self.game
-                        .as_mut()
-                        .unwrap()
-                        .players
-                        .remove(&id);
+                    self.game.as_mut().unwrap().players.remove(&id);
                 }
                 self.connections.remove(&id);
                 info!("Closed connection #{}", id);
@@ -264,37 +261,20 @@ impl Server
                 players.insert(player_id, player_value);
             }
             self.game = Some(Game::new(players, self.game_turns, self.game_id, self.token_rate));
-            self.game
-                .as_mut()
-                .unwrap()
-                .tick();
+            self.game.as_mut().unwrap().tick();
             self.send_overview();
             self.game_id += 1;
         }
-        else if self.game.is_some() &&
-                  !self.game
-                       .as_ref()
-                       .unwrap()
-                       .finished()
+        else if self.game.is_some() && !self.game.as_ref().unwrap().finished()
         {
-            self.game
-                .as_mut()
-                .unwrap()
-                .tick();
+            self.game.as_mut().unwrap().tick();
             self.send_overview();
         }
-        else if self.game.is_some() &&
-                  self.game
-                      .as_ref()
-                      .unwrap()
-                      .finished()
+        else if self.game.is_some() && self.game.as_ref().unwrap().finished()
         {
             info!("Game ended!");
             let mut to_readd: Vec<(u64, ClientRole)> = Vec::new();
-            for (key, player) in &self.game
-                                      .as_ref()
-                                      .unwrap()
-                                      .players
+            for (key, player) in &self.game.as_ref().unwrap().players
             {
                 to_readd.push((*key, ClientRole::Player(PlayerInfo { name: player.name.clone() })));
             }
@@ -353,13 +333,14 @@ impl Server
                         }
                         let conn = conn.unwrap();
                         conn.role = ConnectionType::Player(user_game_id);
-                        self.queue.insert(user_game_id,
-                                          Player {
-                                              name: info.name.clone(),
-                                              id: user_game_id,
-                                              points: 0,
-                                              position: Point { x: 0, y: 0 },
-                                          });
+                        self.queue
+                            .insert(user_game_id,
+                                    Player {
+                                        name: info.name.clone(),
+                                        id: user_game_id,
+                                        points: 0,
+                                        position: Point { x: 0, y: 0 },
+                                    });
                         if self.game.is_none()
                         {
                             self.game_start_ticks_left = self.game_start_ticks;
@@ -437,8 +418,12 @@ impl Server
                                     _ => error!("I/O error"),
                                 }
                             }
-                            Err(Error::ConnectionClosed) => self.message_sender.send(MessageResponse::Disconnected(id)).unwrap(),
-                            Err(_) => error!("Error while sending data"),
+                            Err(_) =>
+                            {
+                                self.message_sender
+                                    .send(MessageResponse::Disconnected(id))
+                                    .unwrap()
+                            }
                         }
                     }
                     None => error!("Missing id"),
