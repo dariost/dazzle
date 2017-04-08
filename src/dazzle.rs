@@ -57,14 +57,14 @@ fn send_data<T: ?Sized + Serialize, U: Read + Write>(ws: &mut WebSocket<U>, valu
                         _ => error!("I/O error"),
                     }
                 }
-                Err(_) => panic!("Connection closed!"),
+                _ => panic!("Connection closed!"),
             }
         }
         Err(_) => unreachable!(),
     };
 }
 
-#[cfg_attr(feature = "cargo-clippy", allow(many_single_char_names))]
+#[cfg_attr(feature = "cargo-clippy", allow(many_single_char_names, needless_range_loop))]
 fn main()
 {
     mowl::init_with_level(log::LogLevel::Info).unwrap();
